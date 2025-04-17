@@ -64,7 +64,8 @@ const sellRate = ref(null)
 const fetchZiraatRate = async (from, to, amount = 1) => {
   try {
     const response = await axios.post(
-        'http://localhost:3001/ziraat',
+        // 'http://localhost:3001/ziraat',
+        'https://exchangerateapp.onrender.com/ziraat',
         {
           alisDovizKodu: from,
           satisDovizKodu: to,
