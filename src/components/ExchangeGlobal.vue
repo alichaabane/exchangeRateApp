@@ -62,7 +62,7 @@ const loading = ref(true)
 const error = ref(null)
 
 const API_KEY = '5ddd652f71c035131d0e2b7c401a2b3b'
-const API_URL = `http://api.exchangeratesapi.io/v1/latest?access_key=${API_KEY}&symbols=TRY`
+const API_URL = `https://api.exchangeratesapi.io/v1/latest?access_key=${API_KEY}&symbols=TRY`
 
 const eurAmount = ref(1)
 const convertedAmount = ref(null)
