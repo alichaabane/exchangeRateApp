@@ -120,12 +120,12 @@ watch([tryAmount, buyRate], () => {
 })
 
 const resetEur = () => {
-  eurAmount.value = 0
+  eurAmount.value = 1
   convertedAmount.value = null
 }
 
 const resetTry = () => {
-  tryAmount.value = 0
+  tryAmount.value = 1
   convertedEUR.value = null
 }
 
