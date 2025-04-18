@@ -17,6 +17,12 @@
       <p><strong>Buy (TRY):</strong> {{ buyRate }}</p>
       <p><strong>Sell (TRY):</strong> {{ sellRate }}</p>
     </div>
+    <p class="refresh-note">
+      📌 We refresh exchange rates every <b>30</b> minutes.<br />
+      ⏱️ Next refresh in: <b>{{ formatTime(countdown) }}</b><br />
+      🕒 Last updated: {{ lastUpdated ? lastUpdated.toLocaleTimeString() : 'N/A' }}
+    </p>
+
   </div>
 
   <div class="calc-container">
@@ -52,7 +58,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue'
+import {onMounted, onUnmounted, ref, watch} from 'vue'
 import axios from 'axios'
 
 const result = ref(null)
@@ -63,8 +69,8 @@ const sellRate = ref(null)
 
 const fetchZiraatRate = async (from, to, amount = 1) => {
   try {
+    // 'http://localhost:3001/ziraat',
     const response = await axios.post(
-        // 'http://localhost:3001/ziraat',
         'https://exchangerateapp.onrender.com/ziraat',
         {
           alisDovizKodu: from,
@@ -132,19 +138,117 @@ const resetTry = () => {
   convertedEUR.value = null
 }
 
-onMounted(async () => {
+const lastUpdated = ref(null)
+const countdown = ref(1800) // 30 minutes in seconds
+let countdownTimer = null
+const shouldResetCountdown = ref(true)
+
+const fetchAllRates = async () => {
   loading.value = true
 
-  const eurToTry = await fetchZiraatRate('EUR', 'TRY')  // BANK BUY
-  const amount = 1000
-  const eur = await fetchZiraatRate('TRY', 'EUR', amount)
-  const calculatedSell = 1 / eur // ← لأن eur هو كم يورو = 1 ليرة، فنقلبه
+  const eurToTry = await fetchZiraatRate('EUR', 'TRY')
+  const eur = await fetchZiraatRate('TRY', 'EUR', 1000)
+  const calculatedSell = 1 / eur
 
-  buyRate.value = eurToTry.toFixed(4)         // سعر بيع اليورو للبنك
-  sellRate.value = calculatedSell.toFixed(4)  // كم تحتاج TRY لشراء 1 EUR
+  buyRate.value = eurToTry.toFixed(4)
+  sellRate.value = calculatedSell.toFixed(4)
+
+  lastUpdated.value = new Date()
+
+  // فقط نصفر العداد إذا مسموح reset
+  if (shouldResetCountdown.value) {
+    countdown.value = 1800
+  }
 
   loading.value = false
+
+  localStorage.setItem('ziraatRates', JSON.stringify({
+    buyRate: buyRate.value,
+    sellRate: sellRate.value,
+    lastUpdated: lastUpdated.value
+  }))
+
+}
+
+
+// التحديث اليدوي فقط لما المستخدم يرجع للتبويب
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    const now = new Date()
+    const last = lastUpdated.value
+
+    if (!last) {
+      fetchAllRates()
+    } else {
+
+      const diffSeconds = (now - last) / 1000
+      if (diffSeconds >= 1800) {
+        // لا نصفر العداد هنا
+        shouldResetCountdown.value = false
+        fetchAllRates()
+        shouldResetCountdown.value = true
+      }
+    }
+  }
+}
+
+onMounted(() => {
+  const stored = localStorage.getItem('ziraatRates')
+
+  if (stored) {
+    const parsed = JSON.parse(stored)
+    const now = new Date()
+    const then = new Date(parsed.lastUpdated)
+    const diffSeconds = (now - then) / 1000
+
+    if (diffSeconds < 1800) {
+      buyRate.value = parsed.buyRate
+      sellRate.value = parsed.sellRate
+      lastUpdated.value = new Date(parsed.lastUpdated)
+      countdown.value = 1800 - Math.floor(diffSeconds)
+
+      loading.value = false
+      // ⬇️ أضف هذا حتى لو ما عمل fetch
+      countdownTimer = setInterval(() => {
+        if (countdown.value > 0) {
+          countdown.value--
+        } else {
+          fetchAllRates()
+        }
+      }, 1000)
+
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+
+      return
+    }
+  }
+
+  fetchAllRates()
+
+  // ⬇️ أضف المؤقت هنا أيضًا
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--
+    } else {
+      fetchAllRates()
+    }
+  }, 1000)
+
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+const formatTime = (seconds) => {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0')
+  const s = (seconds % 60).toString().padStart(2, '0')
+  return `${m}:${s}`
+}
+
+defineExpose({ formatTime })
 
 </script>
 
@@ -253,5 +357,11 @@ h1 {
   background: #999;
 }
 
+.refresh-note {
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 15px;
+  line-height: 1.4;
+}
 
 </style>

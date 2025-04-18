@@ -3,7 +3,7 @@
     <div class="global-header">
       <img src="https://www.fxexchangerate.com/static/pair/try/tryeur.webp" alt="exchangerates"
            class="global-logo"/>
-      <span class="global-title">Exchange Rates</span>
+      <span class="global-title">Global (Frankfurt Bank)</span>
     </div>
 
     <h1>
@@ -61,8 +61,7 @@ const sellRate = ref(null)
 const loading = ref(true)
 const error = ref(null)
 
-const API_KEY = '5ddd652f71c035131d0e2b7c401a2b3b'
-const API_URL = `https://api.exchangeratesapi.io/v1/latest?access_key=${API_KEY}&symbols=TRY`
+const FRANKFURTER_API = 'https://api.frankfurter.app/latest?from=EUR&to=TRY'
 
 const eurAmount = ref(1)
 const convertedAmount = ref(null)
@@ -88,20 +87,22 @@ const calculateTRY = () => {
 
 onMounted(async () => {
   try {
-    const {data} = await axios.get(API_URL)
-    if (data.success) {
-      const midRate = data.rates.TRY
-      buyRate.value = (midRate * 1.01).toFixed(2) // +1% for buy
-      sellRate.value = (midRate * 0.99).toFixed(2) // -1% for sell
+    const { data } = await axios.get(FRANKFURTER_API)
+    const midRate = data?.rates?.TRY
+
+    if (midRate) {
+      buyRate.value = (midRate * 1.01).toFixed(2) // +1% bank spread
+      sellRate.value = (midRate * 0.99).toFixed(2) // -1% bank spread
     } else {
-      error.value = 'Failed to fetch exchange rates.'
+      error.value = 'Rate not found in response.'
     }
   } catch (e) {
-    error.value = 'Network error or invalid API key.'
+    error.value = 'Network error while fetching exchange rate.'
   } finally {
     loading.value = false
   }
 })
+
 
 watch([eurAmount, sellRate], () => {
   if (sellRate.value && eurAmount.value >= 0) {
