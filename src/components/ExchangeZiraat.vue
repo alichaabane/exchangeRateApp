@@ -29,14 +29,14 @@
     <div class="input-wrapper">
       <input
           type="number"
-          v-model.number="eurAmount"
+          v-model.number="eurAmountBuy"
           class="amount-input"
-          placeholder="Enter EUR amount"
+          placeholder="EUR → TRY (Buy)"
       />
-      <button class="reset-btn" @click="resetEur">✕</button>
+      <button class="reset-btn" @click="resetBuy">✕</button>
     </div>
-    <div v-if="convertedAmount !== null" class="calc-result">
-      {{ eurAmount }} EUR ≈ <strong>{{ convertedAmount }} TRY</strong>
+    <div v-if="convertedBuy !== null" class="calc-result">
+      {{ eurAmountBuy }} EUR ≈ <strong>{{ convertedBuy }} TRY</strong> (Buy Rate)
     </div>
   </div>
 
@@ -44,16 +44,17 @@
     <div class="input-wrapper">
       <input
           type="number"
-          v-model.number="tryAmount"
+          v-model.number="eurAmountSell"
           class="amount-input"
-          placeholder="Enter TRY amount"
+          placeholder="EUR → TRY (Sell)"
       />
-      <button class="reset-btn" @click="resetTry">✕</button>
+      <button class="reset-btn" @click="resetSell">✕</button>
     </div>
-    <div v-if="convertedEUR !== null" class="calc-result">
-      {{ tryAmount }} TRY ≈ <strong>{{ convertedEUR }} EUR</strong>
+    <div v-if="convertedSell !== null" class="calc-result">
+      {{ eurAmountSell }} EUR ≈ <strong>{{ convertedSell }} TRY</strong> (Sell Rate)
     </div>
   </div>
+
 
 </template>
 
@@ -90,53 +91,37 @@ const fetchZiraatRate = async (from, to, amount = 1) => {
   }
 }
 
-const eurAmount = ref(1)
-const convertedAmount = ref(null)
+const eurAmountBuy = ref(1)
+const eurAmountSell = ref(1)
 
-const calculateEUR = () => {
-  if (!buyRate.value || tryAmount.value <= 0) {
-    convertedEUR.value = null
-    return
-  }
-  convertedEUR.value = (tryAmount.value / buyRate.value).toFixed(2)
+const convertedBuy = ref(null)
+const convertedSell = ref(null)
+
+const resetBuy = () => {
+  eurAmountBuy.value = 1
+  convertedBuy.value = null
 }
 
-const tryAmount = ref(1)
-const convertedEUR = ref(null)
-
-const calculateTRY = () => {
-  if (!sellRate.value || eurAmount.value <= 0) {
-    convertedAmount.value = null
-    return
-  }
-  convertedAmount.value = (eurAmount.value * sellRate.value).toFixed(2)
+const resetSell = () => {
+  eurAmountSell.value = 1
+  convertedSell.value = null
 }
 
-watch([eurAmount, sellRate], () => {
-  if (sellRate.value && eurAmount.value >= 0) {
-    convertedAmount.value = (eurAmount.value * sellRate.value).toFixed(2)
+watch([eurAmountBuy, buyRate], () => {
+  if (buyRate.value && eurAmountBuy.value >= 0) {
+    convertedBuy.value = (eurAmountBuy.value * buyRate.value).toFixed(2)
   } else {
-    convertedAmount.value = null
+    convertedBuy.value = null
   }
 })
 
-watch([tryAmount, buyRate], () => {
-  if (buyRate.value && tryAmount.value >= 0) {
-    convertedEUR.value = (tryAmount.value / buyRate.value).toFixed(2)
+watch([eurAmountSell, sellRate], () => {
+  if (sellRate.value && eurAmountSell.value >= 0) {
+    convertedSell.value = (eurAmountSell.value * sellRate.value).toFixed(2)
   } else {
-    convertedEUR.value = null
+    convertedSell.value = null
   }
 })
-
-const resetEur = () => {
-  eurAmount.value = 1
-  convertedAmount.value = null
-}
-
-const resetTry = () => {
-  tryAmount.value = 1
-  convertedEUR.value = null
-}
 
 const lastUpdated = ref(null)
 const countdown = ref(1800) // 30 minutes in seconds
