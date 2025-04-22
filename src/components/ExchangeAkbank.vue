@@ -1,12 +1,12 @@
 <template>
   <div class="exchange-akbank">
-    <div class="ziraat-header">
-      <img src="https://www.akbank.com/SiteAssets/img/logo.svg" alt="Akbank Logo" class="ziraat-logo" />
-<!--      <span class="ziraat-title">Akbank</span>-->
+    <div class="akbank-header">
+      <img width="150px" height="auto" src="https://www.akbank.com/SiteAssets/img/logo.svg" alt="Akbank Logo" class="akbank-logo" />
+      <!--      <span class="akbank-title">Akbank</span>-->
     </div>
 
     <h1>
-      <span>🇪🇺 EUR → TRY 🇹🇷</span><br />
+      <span>🇪🇺 EUR → TRY 🇹🇷</span><br/>
       <span>🇹🇷 TRY → EUR 🇪🇺</span>
     </h1>
 
@@ -16,50 +16,83 @@
       <p><strong>Buy (TRY):</strong> {{ buyRate }}</p>
       <p><strong>Sell (TRY):</strong> {{ sellRate }}</p>
     </div>
+    <p class="refresh-note">
+      📌 We refresh exchange rates every <b>30</b> minutes.<br />
+      ⏱️ Next refresh in: <b>{{ formatTime(countdown) }}</b><br />
+      🕒 Last updated: {{ lastUpdated ? lastUpdated.toLocaleTimeString() : 'N/A' }}
+    </p>
 
-    <div class="calc-container">
-      <div class="input-wrapper">
-        <input
-            type="number"
-            v-model.number="eurAmountBuy"
-            class="amount-input"
-            placeholder="EUR → TRY (Buy)"
-        />
-        <button class="reset-btn" @click="resetBuy">✕</button>
-      </div>
-      <div v-if="convertedBuy !== null" class="calc-result">
-        {{ eurAmountBuy }} EUR ≈ <strong>{{ convertedBuy }} TRY</strong> (Buy Rate)
-      </div>
+  </div>
+
+  <div class="calc-container">
+    <div class="input-wrapper">
+      <input
+          type="number"
+          v-model.number="eurAmountBuy"
+          class="amount-input"
+          placeholder="EUR → TRY (Buy)"
+      />
+      <button class="reset-btn" @click="resetBuy">✕</button>
     </div>
-
-    <div class="calc-container">
-      <div class="input-wrapper">
-        <input
-            type="number"
-            v-model.number="eurAmountSell"
-            class="amount-input"
-            placeholder="EUR → TRY (Sell)"
-        />
-        <button class="reset-btn" @click="resetSell">✕</button>
-      </div>
-      <div v-if="convertedSell !== null" class="calc-result">
-        {{ eurAmountSell }} EUR ≈ <strong>{{ convertedSell }} TRY</strong> (Sell Rate)
-      </div>
+    <div v-if="convertedBuy !== null" class="calc-result">
+      {{ eurAmountBuy }} EUR ≈ <strong>{{ convertedBuy }} TRY</strong> (Buy Rate)
     </div>
   </div>
+
+  <div class="calc-container">
+    <div class="input-wrapper">
+      <input
+          type="number"
+          v-model.number="eurAmountSell"
+          class="amount-input"
+          placeholder="EUR → TRY (Sell)"
+      />
+      <button class="reset-btn" @click="resetSell">✕</button>
+    </div>
+    <div v-if="convertedSell !== null" class="calc-result">
+      {{ eurAmountSell }} EUR ≈ <strong>{{ convertedSell }} TRY</strong> (Sell Rate)
+    </div>
+  </div>
+
+
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import {onMounted, onUnmounted, ref, watch} from 'vue'
 import axios from 'axios'
 
-const loading = ref(true)
+const result = ref(null)
 const error = ref(null)
+const loading = ref(true)
 const buyRate = ref(null)
 const sellRate = ref(null)
 
+const fetchAkbankRate = async () => {
+  try {
+    const response = await axios.post('https://exchangerateapp.onrender.com/akbank')
+
+    // ✅ Correct path
+    const dovizList = response.data?.d?.Data?.DovizKurlari
+    console.log(dovizList)
+    if (!Array.isArray(dovizList)) throw new Error('No rate list returned')
+
+    const eur = dovizList.find(item => item.AlfaKod === 'EUR')
+    if (!eur) throw new Error('EUR not found in list')
+
+    return {
+      buy: parseFloat(eur.DovizAlis),
+      sell: parseFloat(eur.DovizSatis),
+    }
+  } catch (err) {
+    console.error('Failed to get Akbank rate:', err)
+    return null
+  }
+}
+
+
 const eurAmountBuy = ref(1)
 const eurAmountSell = ref(1)
+
 const convertedBuy = ref(null)
 const convertedSell = ref(null)
 
@@ -67,6 +100,7 @@ const resetBuy = () => {
   eurAmountBuy.value = 1
   convertedBuy.value = null
 }
+
 const resetSell = () => {
   eurAmountSell.value = 1
   convertedSell.value = null
@@ -88,28 +122,125 @@ watch([eurAmountSell, sellRate], () => {
   }
 })
 
-const fetchAkbankRates = async () => {
-  try {
-    // 'http://localhost:3001/akbank',
-    // 'https://exchangerateapp.onrender.com/akbank',
+const lastUpdated = ref(null)
+const countdown = ref(1800) // 30 minutes in seconds
+let countdownTimer = null
+const shouldResetCountdown = ref(true)
 
-    const response = await axios.post('https://exchangerateapp.onrender.com/akbank')
-    const currencies = response.data?.Data?.DovizKurlari
+const fetchAllRates = async () => {
+  loading.value = true
 
-    const euro = currencies.find(item => item.AlfaKod === 'EUR')
+  const eurToTry = await fetchAkbankRate('EUR', 'TRY')
+  console.log(eurToTry)
+  const eur = await fetchAkbankRate('TRY', 'EUR', 1000)
+  const calculatedSell = 1 / eur
 
-    buyRate.value = parseFloat(euro.DovizAlis).toFixed(4)
-    sellRate.value = parseFloat(euro.DovizSatis).toFixed(4)
-  } catch (err) {
-    error.value = 'Failed to load exchange rates.'
-  } finally {
-    loading.value = false
+  console.log(eurToTry)
+
+  buyRate.value = eurToTry.buy.toFixed(4)
+  sellRate.value = eurToTry.sell.toFixed(4)
+
+  buyRate.value = eurToTry.buy.toFixed(4)
+  sellRate.value = eurToTry.sell.toFixed(4)
+
+
+  lastUpdated.value = new Date()
+
+  // فقط نصفر العداد إذا مسموح reset
+  if (shouldResetCountdown.value) {
+    countdown.value = 1800
+  }
+
+  loading.value = false
+
+  localStorage.setItem('akbankRates', JSON.stringify({
+    buyRate: buyRate.value,
+    sellRate: sellRate.value,
+    lastUpdated: lastUpdated.value
+  }))
+
+}
+
+
+// التحديث اليدوي فقط لما المستخدم يرجع للتبويب
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    const now = new Date()
+    const last = lastUpdated.value
+
+    if (!last) {
+      fetchAllRates()
+    } else {
+
+      const diffSeconds = (now - last) / 1000
+      if (diffSeconds >= 1800) {
+        // لا نصفر العداد هنا
+        shouldResetCountdown.value = false
+        fetchAllRates()
+        shouldResetCountdown.value = true
+      }
+    }
   }
 }
 
 onMounted(() => {
-  fetchAkbankRates()
+  const stored = localStorage.getItem('akbankRates')
+
+  if (stored) {
+    const parsed = JSON.parse(stored)
+    const now = new Date()
+    const then = new Date(parsed.lastUpdated)
+    const diffSeconds = (now - then) / 1000
+
+    if (diffSeconds < 1800) {
+      buyRate.value = parsed.buyRate
+      sellRate.value = parsed.sellRate
+      lastUpdated.value = new Date(parsed.lastUpdated)
+      countdown.value = 1800 - Math.floor(diffSeconds)
+
+      loading.value = false
+      // ⬇️ أضف هذا حتى لو ما عمل fetch
+      countdownTimer = setInterval(() => {
+        if (countdown.value > 0) {
+          countdown.value--
+        } else {
+          fetchAllRates()
+        }
+      }, 1000)
+
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+
+      return
+    }
+  }
+
+  fetchAllRates()
+
+  // ⬇️ أضف المؤقت هنا أيضًا
+  countdownTimer = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--
+    } else {
+      fetchAllRates()
+    }
+  }, 1000)
+
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+})
+
+const formatTime = (seconds) => {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0')
+  const s = (seconds % 60).toString().padStart(2, '0')
+  return `${m}:${s}`
+}
+
+defineExpose({ formatTime })
+
 </script>
 
 <style scoped>
@@ -119,7 +250,7 @@ h1 {
   line-height: 1.6;
 }
 
-.exchange-ziraat {
+.exchange-akbank {
   max-width: 400px;
   margin: 50px auto;
   padding: 20px;
@@ -133,19 +264,19 @@ h1 {
   color: red;
 }
 
-.ziraat-header {
+.akbank-header {
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
 }
 
-.ziraat-logo {
+.akbank-logo {
   height: 50px;
   margin-right: 10px;
 }
 
-.ziraat-title {
+.akbank-title {
   font-size: 1.6rem;
   font-weight: bold;
   color: #c10000;
