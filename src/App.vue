@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import ExchangeZiraat from './components/ExchangeZiraat.vue'
+import ExchangeAkbank from './components/ExchangeAkbank.vue'
 import ExchangeGlobal from "./components/ExchangeGlobal.vue";
 
 const currentTab = ref('global')
@@ -11,11 +12,13 @@ const currentTab = ref('global')
     <div class="tabs">
       <button :class="{ active: currentTab === 'global' }" @click="currentTab = 'global'">🌐 Global Exchange</button>
       <button :class="{ active: currentTab === 'ziraat' }" @click="currentTab = 'ziraat'">🏦 Ziraat Bankası</button>
+      <button :class="{ active: currentTab === 'akbank' }" @click="currentTab = 'akbank'">🏦 Akbank Bankası</button>
     </div>
 
     <div class="tab-content">
       <ExchangeGlobal v-if="currentTab === 'global'" />
       <ExchangeZiraat v-if="currentTab === 'ziraat'" />
+      <ExchangeAkbank v-if="currentTab === 'akbank'" />
     </div>
   </div>
 </template>

@@ -25,6 +25,24 @@ app.post('/ziraat', async (req, res) => {
     }
 })
 
+app.post('/akbank', async (req, res) => {
+    try {
+        const response = await axios.post(
+            'https://www.akbank.com/_layouts/15/Akbank/CalcTools/Ajax.aspx/GetDovizKurlari',
+            req.body,
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        )
+        res.json(response.data)
+    } catch (err) {
+        console.error(err)
+        res.status(500).json({ error: 'Ziraat proxy error' })
+    }
+})
+
 app.listen(3001, () => {
     console.log('Proxy server running on http://localhost:3001')
 })
