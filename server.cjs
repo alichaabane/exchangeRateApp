@@ -27,19 +27,20 @@ app.post('/ziraat', async (req, res) => {
 
 app.post('/akbank', async (req, res) => {
     try {
-        const response = await axios.post(
+        const { data } = await axios.post(
             'https://www.akbank.com/_layouts/15/Akbank/CalcTools/Ajax.aspx/GetDovizKurlari',
-            req.body,
+            {},
             {
                 headers: {
                     'Content-Type': 'application/json'
                 }
             }
         )
-        res.json(response.data)
-    } catch (err) {
-        console.error(err)
-        res.status(500).json({ error: 'Ziraat proxy error' })
+
+        res.json(data)
+    } catch (error) {
+        console.error('Akbank error:', error.message)
+        res.status(500).json({ error: 'Failed to fetch Akbank data' })
     }
 })
 

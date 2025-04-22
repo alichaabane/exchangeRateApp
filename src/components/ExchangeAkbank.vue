@@ -2,7 +2,7 @@
   <div class="exchange-akbank">
     <div class="ziraat-header">
       <img src="https://www.akbank.com/SiteAssets/img/logo.svg" alt="Akbank Logo" class="ziraat-logo" />
-      <span class="ziraat-title">Akbank</span>
+<!--      <span class="ziraat-title">Akbank</span>-->
     </div>
 
     <h1>
