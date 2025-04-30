@@ -42,7 +42,7 @@
           class="amount-input"
           placeholder="Enter TRY amount"
       />
-      <button class="reset-btn" @click="resetTry">✕</button>
+      <button class="reset-btn" @click="resetTry" v-if="eurAmount">×</button>
     </div>
     <div v-if="convertedEUR !== null" class="calc-result">
       {{ tryAmount }} TRY ≈ <strong>{{ convertedEUR }} EUR</strong>
