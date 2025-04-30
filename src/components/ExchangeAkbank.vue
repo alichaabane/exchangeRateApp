@@ -48,8 +48,9 @@
           class="amount-input"
           placeholder="EUR → TRY (Sell)"
       />
-      <button class="reset-btn" @click="resetSell">✕</button>
+      <button class="reset-btn" @click="resetSell" v-if="eurAmountSell">×</button>
     </div>
+
     <div v-if="convertedSell !== null" class="calc-result">
       {{ eurAmountSell }} EUR ≈ <strong>{{ convertedSell }} TRY</strong> (Sell Rate)
     </div>
@@ -330,7 +331,7 @@ h1 {
 
 .reset-btn {
   position: absolute;
-  left: 50px;
+  left: 90px;
   top: 50%;
   transform: translateY(-50%);
   background: #ccc;
@@ -339,7 +340,7 @@ h1 {
   border-radius: 50%;
   width: 24px;
   height: 24px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   padding: 0;
   line-height: 1;
