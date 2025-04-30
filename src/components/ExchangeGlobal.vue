@@ -219,7 +219,7 @@ h1 {
 
 .reset-btn {
   position: absolute;
-  left: 90px;
+  left: 20%;
   top: 50%;
   transform: translateY(-50%);
   background: #ccc;
