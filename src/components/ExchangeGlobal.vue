@@ -91,8 +91,8 @@ onMounted(async () => {
     const midRate = data?.rates?.TRY
 
     if (midRate) {
-      buyRate.value = (midRate * 1.01).toFixed(2) // +1% bank spread
-      sellRate.value = (midRate * 0.99).toFixed(2) // -1% bank spread
+      buyRate.value = (midRate * 0.99).toFixed(2)  // Bank buys EUR at lower rate
+      sellRate.value = (midRate * 1.01).toFixed(2) // Bank sells EUR at higher rate
     } else {
       error.value = 'Rate not found in response.'
     }
