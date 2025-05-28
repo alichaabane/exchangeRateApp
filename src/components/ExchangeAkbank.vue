@@ -71,7 +71,7 @@ const sellRate = ref(null)
 
 const fetchAkbankRate = async () => {
   try {
-    const response = await axios.post('http://localhost:3001/akbank')
+    const response = await axios.post('https://exchangerateapp.onrender.com/akbank')
 
     // Correctly access nested structure: d.Data.DovizKurlari
     const dovizList = response.data?.d?.Data?.DovizKurlari
