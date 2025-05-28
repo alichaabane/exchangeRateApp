@@ -29,7 +29,7 @@ app.post('/akbank', async (req, res) => {
     try {
         const { data } = await axios.post(
             'https://www.akbank.com/_layouts/15/Akbank/CalcTools/Ajax.aspx/GetDovizKurlari',
-            {},
+            { kurTuru: '8' }, // 👈 Akbank now expects this payload
             {
                 headers: {
                     'Content-Type': 'application/json'

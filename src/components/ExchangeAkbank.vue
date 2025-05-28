@@ -71,11 +71,10 @@ const sellRate = ref(null)
 
 const fetchAkbankRate = async () => {
   try {
-    const response = await axios.post('https://exchangerateapp.onrender.com/akbank')
+    const response = await axios.post('http://localhost:3001/akbank')
 
-    // ✅ Correct path
+    // Correctly access nested structure: d.Data.DovizKurlari
     const dovizList = response.data?.d?.Data?.DovizKurlari
-    console.log(dovizList)
     if (!Array.isArray(dovizList)) throw new Error('No rate list returned')
 
     const eur = dovizList.find(item => item.AlfaKod === 'EUR')
@@ -90,6 +89,7 @@ const fetchAkbankRate = async () => {
     return null
   }
 }
+
 
 
 const eurAmountBuy = ref(1)
@@ -132,23 +132,18 @@ const shouldResetCountdown = ref(true)
 const fetchAllRates = async () => {
   loading.value = true
 
-  const eurToTry = await fetchAkbankRate('EUR', 'TRY')
-  console.log(eurToTry)
-  const eur = await fetchAkbankRate('TRY', 'EUR', 1000)
-  const calculatedSell = 1 / eur
+  const eurRates = await fetchAkbankRate()
+  if (!eurRates) {
+    error.value = 'Akbank rate fetch failed'
+    loading.value = false
+    return
+  }
 
-  console.log(eurToTry)
-
-  buyRate.value = eurToTry.buy.toFixed(4)
-  sellRate.value = eurToTry.sell.toFixed(4)
-
-  buyRate.value = eurToTry.buy.toFixed(4)
-  sellRate.value = eurToTry.sell.toFixed(4)
-
+  buyRate.value = eurRates.buy.toFixed(4)
+  sellRate.value = eurRates.sell.toFixed(4)
 
   lastUpdated.value = new Date()
 
-  // فقط نصفر العداد إذا مسموح reset
   if (shouldResetCountdown.value) {
     countdown.value = 1800
   }
@@ -160,7 +155,6 @@ const fetchAllRates = async () => {
     sellRate: sellRate.value,
     lastUpdated: lastUpdated.value
   }))
-
 }
 
 
